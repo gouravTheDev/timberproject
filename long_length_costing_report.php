@@ -1,0 +1,343 @@
+<?php 
+  session_start();
+  if(empty($_SESSION['loggedin_id']))
+  {
+    header("Location: index.php");
+  } else {
+    
+  include("db_connection.php");
+
+  $sql = "SELECT llm.*,wt.id wood_id,wt.wood_type,sbn.batch_id,sbn.batch_no season_batch_no FROM ta_ll_manufacturing llm join ta_wood_type wt on (wt.id = llm.type_of_wood) join ta_season_batch_nos sbn on (sbn.batch_id = llm.batch_no) where llm.status = 1 order by batch_no";
+  $resp = $conn->query($sql);
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>Timber ERP system</title>
+
+  <!-- Custom fonts for this template-->
+  <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+
+  <!-- Custom styles for this template-->
+  <link href="css/sb-admin-2.min.css" rel="stylesheet">
+  <link href="vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+  <style>
+    [contenteditable="true"]
+    {
+      border-style: solid;
+      border-width: 2px;
+      background-color: #fff;
+    }
+  </style>
+</head>
+
+<body id="page-top">
+
+  <!-- Page Wrapper -->
+  <div id="wrapper">
+
+    <!-- Sidebar -->
+   <?php include "sidebar.php"; ?>
+    <!-- End of Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+      <!-- Main Content -->
+      <div id="content">
+
+        <!-- Topbar -->
+        <nav class="navbar navbar-expand navbar-light bg-white topbar mb-0 static-top shadow">
+
+          <!-- Sidebar Toggle (Topbar) -->
+          <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+            <i class="fa fa-bars"></i>
+          </button>
+
+          <!-- Topbar Navbar -->
+          <ul class="navbar-nav ml-auto">
+            <!-- Nav Item - Search Dropdown (Visible Only XS) -->
+            <!-- Nav Item - Alerts -->            
+            <!-- Nav Item - Messages -->          
+
+            <div class="topbar-divider d-none d-sm-block"></div>
+
+            <!-- Nav Item - User Information -->
+            <li class="nav-item dropdown no-arrow">
+              <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Welcome Admin</span>
+                <img class="img-profile rounded-circle" src="https://source.unsplash.com/QAB-WJcbgJk/60x60">
+              </a>
+              <!-- Dropdown - User Information -->
+              <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                  <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                  Logout
+                </a>
+              </div>
+            </li>
+
+          </ul>
+
+        </nav>
+        <!-- End of Topbar -->
+
+        <!-- Begin Page Content -->
+        <div class="">
+
+          <!-- Page Heading -->
+          <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <!--h2 class="h5 mb-0 text-gray-800 text-center" style="width: 100%;">Add Raw Material</h2-->			
+          </div>
+        <div class="">
+          <div class="card shadow mb-4">
+            <div class="card-header py-3">
+              <h6 class="m-0 font-weight-bold text-primary" style="text-transform: capitalize;">long length costing report</h6>
+            </div>
+            <div class="card-body">
+              
+              <div class="table-responsive">
+              	<!-- Board Manufacturing Table starts  -->
+        				<div class="table-responsive">
+        					<table class="table table-bordered requestTable" id="rawWoodClosingTable" width="100%" cellspacing="0">
+        						<thead>
+        							<tr>
+                        <th>S.No</th>
+        								<th>Batch No</th>
+        								<th>Type</th>
+                        <th>Width</th>
+        								<th>Length</th>
+        								<th>Thickness</th>
+        								<th>Qty Pcs</th>
+                        <th>CBM</th>
+                        <th>Avg Cft</th>
+                        <th>Material Consumed CFT from Seasoning Batch Report</th>
+                        <th>Avg Loss from Seasoning to Long length Manfacturing</th>
+                        <th>Total Glue Consumed in Batch 1 </th>
+                        <th>Avg Price of Wood from Material In</th>
+                        <th>Avg Price of Glue from Material In</th>
+                        <th>Total Value </th>
+                        <th>Total Value of Glue</th>
+                        <th>Seasoning Price</th>
+                        <th>Mis or Seasoning Cost Per Pcs</th>
+                        <th>Total Cost =Total Value + Glue Value + Seasoning Cost</th>
+                        <th>Total Cost / Avg output</th>
+                        <th>Total Price Per PCS = Avg Output * Avg Output Price /No of Pcs Produce</th>
+        							</tr>
+        						</thead>
+        						<tbody>
+                      <?php 
+                      $sno = 1;
+                      $counter = $thickness = 0;
+                      $data = array();
+                      $prevbatchNo = "0";
+                      $avgLoss = 0;
+                        while ($rows = $resp->fetch_assoc()) {
+
+                          $seasonBatch = $rows['batch_no'];
+                          // echo $seasonBatch;
+
+                          //Total cft calculation
+                          $sqlCft = "SELECT * FROM ta_seasoning_output WHERE seasonout_batch = '$seasonBatch'";
+                          $resultBatch = $conn->query($sqlCft);
+
+                          $totalConsumedCft = 0;
+
+                          if(mysqli_num_rows($resultBatch)>0){
+                            while($rowResultBatch = mysqli_fetch_array($resultBatch,MYSQLI_ASSOC)){
+                              if ($rowResultBatch['total_cft']) {
+                                $totalConsumedCft = $totalConsumedCft+$rowResultBatch['total_cft']; 
+                              }
+                            }
+                          }
+
+                          // Total glue calculation
+
+                          $sqlGlue = "SELECT * FROM ta_consumed_glue WHERE ll_batch_id = '$seasonBatch'";
+                          $resultGlue = $conn->query($sqlGlue);
+
+                          $totalGlue = 0;
+
+                          if(mysqli_num_rows($resultGlue)>0){
+                            while($rowResultGlue = mysqli_fetch_array($resultGlue,MYSQLI_ASSOC)){
+                              if ($rowResultGlue['qty']) {
+                                $totalGlue = $totalGlue+$rowResultGlue['qty']; 
+                              }
+                              if ($rowResultGlue['glue_type'] || $rowResultGlue['glue_type']!="") {
+                                $glueType = $rowResultGlue['glue_type'];
+                              }
+                              
+                            }
+                          }
+
+                          // echo "<pre>";print_r($rows);
+                          $avgPrice = "select price from ta_raw_wood where wood_type = ".$rows['type_of_wood']." and status = 1";
+                          $avgPriceresp = $conn->query($avgPrice);
+                          $avgPriceRows = $avgPriceresp->fetch_array();
+
+                          $avgGlue = "SELECT * FROM ta_raw_glue WHERE glue_type = '$glueType' ";
+                          $avgGlueresp = $conn->query($avgGlue);
+                          
+                          $rowRawGlue = mysqli_fetch_array($avgGlueresp,MYSQLI_ASSOC);
+                         
+
+                           // GET TOTAL OF AVG CFT FOR A BATCH
+                          $batchNoRow = $rows['batch_no'];
+                          $totalAvgCft = "SELECT * FROM ta_ll_manufacturing WHERE batch_no = '$batchNoRow' ";
+                          $totalAvgCftRes = $conn->query($totalAvgCft);
+                          $totalAvgCftCalculated = 0;
+                           if(mysqli_num_rows($totalAvgCftRes)>0){
+                            while($rowtotalAvgCftRes = mysqli_fetch_array($totalAvgCftRes,MYSQLI_ASSOC)){
+                                if ($rowtotalAvgCftRes['cft']) {
+                                  $totalAvgCftCalculated = $totalAvgCftCalculated+$rowtotalAvgCftRes['cft']; 
+                                }
+                            }
+                            $avgLossNewCal = $totalConsumedCft - $totalAvgCftCalculated;
+                          }
+
+                          $pricePerSeason = "SELECT * FROM ta_seasoning_output WHERE seasonout_batch = '$batchNoRow' ";
+                          $pricePerSeasonRes = $conn->query($pricePerSeason);
+                          $rowpricePerSeasonRes = mysqli_fetch_array($pricePerSeasonRes,MYSQLI_ASSOC);
+                          $seasonPrice = $rowpricePerSeasonRes['price_seasoning_per_cft'];
+
+                      ?>
+                  
+        							<tr>
+        								<th><?php echo $sno++;?></th>
+                        <th><?php echo $rows['season_batch_no']; ?></th>
+        								<th><?php echo $rows['wood_type']; ?></th>
+                        <th><?php echo $rows['width']; ?></th>
+                        <th><?php echo $rows['length']; ?></th>
+        								<th><?php echo $rows['thickness'];?></th>
+        								<th><?php echo $rows['pieces'];?></th>
+        								<th><?php echo $rows['cbm'];?></th> 
+                        <th><?php echo $rows['cft'];?></th>
+
+                        <?php 
+                          $totalCost = ($avgPriceRows['price']*$totalConsumedCft)+($rowRawGlue['price']*$totalGlue)+($seasonPrice*$totalConsumedCft);
+                          $totalCostAvgOp = $totalCost/$totalAvgCftCalculated;
+                          $totalPricePerPcs = ($rows['cft']*$totalCostAvgOp)/$rows['pieces'];
+
+
+                        ?>
+                        <?php if ($rows['batch_no'] != $prevbatchNo): ?>
+                          <th><?php echo $totalConsumedCft; ?></th>
+                          <th><?php echo $avgLossNewCal;?> </th>
+                          <th><?php echo $totalGlue; ?></th>
+                          <th><?php echo $avgPriceRows['price'];?></th>
+                          <th><?php echo $rowRawGlue['price']; ?></th>
+                          <th><?php echo $avgPriceRows['price']*$totalConsumedCft; ?></th>
+                          <th><?php echo $rowRawGlue['price']*$totalGlue; ?></th>
+                          <th><?php echo $seasonPrice; ?></th>
+                          <th><?php echo $seasonPrice*$totalConsumedCft; ?></th>
+                          <th><?php echo $totalCost; ?></th>
+                          <th><?php echo $totalCostAvgOp; ?></th>
+                        <?php else: ?>
+                          <th><?php  ?></th>
+                          <th><?php  ?> </th>
+                          <th><?php  ?> </th>
+                          <th><?php  ?> </th>
+                          <th><?php  ?> </th>
+                          <th><?php  ?> </th>
+                          <th><?php  ?> </th>
+                          <th><?php  ?> </th>
+                          <th><?php  ?> </th>
+                          <th><?php  ?> </th>
+                          <th><?php  ?> </th>
+                        <?php endif; ?>
+                        <th><?php echo $totalPricePerPcs;?></th>
+        							</tr>
+
+                    <?php 
+                    $prevbatchNo = $rows['batch_no'];
+
+                  } ?>
+        						</tbody>
+        					</table>
+        				</div>
+            	<!-- Long length Table ends  -->
+            	<hr>
+              </div>
+            </div>
+          </div>
+        </div>
+          <!-- Content Row -->          
+          <!-- Content Row -->         
+          <!-- Content Row -->          
+        </div>
+        <!-- /.container-fluid -->
+      </div>
+      <!-- End of Main Content -->
+      <!-- Footer -->
+      <?php include "footer.php"; ?>
+      <!-- End of Footer -->
+    </div>
+    <!-- End of Content Wrapper -->
+
+  </div>
+  <!-- End of Page Wrapper -->
+  <!-- Scroll to Top Button-->
+  <a class="scroll-to-top rounded" href="#page-top">
+    <i class="fas fa-angle-up"></i>
+  </a>
+
+  <!-- Logout Modal-->
+  <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+          <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button> 
+          <a class="btn btn-primary" href="sav_files/logout.php">Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+   <!-- Bootstrap core JavaScript-->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Core plugin JavaScript-->
+  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+  <!-- Custom scripts for all pages-->
+  <script src="js/sb-admin-2.min.js"></script>
+
+  <!-- Page level plugins -->
+  <script src="vendor/datatables/jquery.dataTables.min.js"></script>
+
+  <script src="https://cdn.datatables.net/buttons/1.6.1/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.flash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.print.min.js"></script>
+
+
+  <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
+
+  <!-- Page level custom scripts -->
+  <script src="js/demo/datatables-demo.js"></script>
+
+</body>
+
+</html>
+<?php } ?>
