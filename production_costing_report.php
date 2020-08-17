@@ -144,6 +144,26 @@
                       $counter = $thickness = 0;
                       $data = array();
                         while ($rows = $resp->fetch_assoc()) {
+
+                          // FETCH DATA FROM LL_MANU
+                          $rowBatchNo = $rows['bm_batch_no'];
+                          // echo $rowBatchNo;
+                          $sqlFetchLL = "SELECT * FROM ta_ll_manufacturing WHERE batch_no = '$rowBatchNo'";
+                          $resultFetchDetails = $conn->query($sqlFetchLL);
+                          $rowDetails = mysqli_fetch_array($resultFetchDetails,MYSQLI_ASSOC);
+
+                          $avgCostPerPieces = $rowDetails['avg_price_per_pieces'];
+
+                          $totalPieces = 0;
+                          $numberOfRows = mysqli_num_rows($resultFetchDetails);
+                          while ($rowDetails = mysqli_fetch_array($resultFetchDetails,MYSQLI_ASSOC)) {
+                            if ($rowDetails['pieces']) {
+                              $totalPieces = $totalPieces+$rowDetails['pieces'];
+                            }
+                          }
+                          $avgLL = $totalPieces/$numberOfRows;
+                          // echo $llPiecec;
+
                           // echo "<pre>";print_r($rows);
                           $avgPrice = "select price from ta_raw_wood where wood_type = ".$rows['type_of_wood']." and status = 1";
                           $avgPriceresp = $conn->query($avgPrice);
@@ -152,11 +172,34 @@
                           $avgGlue = "select trg.price from ta_raw_glue trg join ta_consumed_glue tcg on (trg.glue_type = tcg.glue_type) where tcg.wood_id = ".$rows['type_of_wood']." and trg.status = 1";
                           $avgGlueresp = $conn->query($avgGlue);
                           $avgGlueRows = $avgGlueresp->fetch_array();
+                          $rowGradiation = $rows['gradiation'];
+                          // echo $rowGradiation;
+                          $gradiationSql = "SELECT * FROM ta_gradation where id = '$rowGradiation'";
+                          $gradiationresp = $conn->query($gradiationSql);
+                          $gradiationRows = mysqli_fetch_array($gradiationresp,MYSQLI_ASSOC);
+
+                          $getGlue = "SELECT * FROM ta_consumed_glue WHERE board_batch_id = '$rowBatchNo' ";
+                          $avgGlueresp = $conn->query($getGlue);
+                          
+                          $rowGetGlue = mysqli_fetch_array($getGlue,MYSQLI_ASSOC);
+
+                          $glueType = $rowGetGlue['glue_type'];
+                          $qty = $rowGetGlue['qty'];
+
+                          $avgGlue = "SELECT * FROM ta_raw_glue WHERE glue_type = '$glueType' ";
+                          $avgGlueresp = $conn->query($avgGlue);
+                          
+                          $rowRawGlue = mysqli_fetch_array($avgGlueresp,MYSQLI_ASSOC);
+
+                          $gluePrice = $rowRawGlue['price'];
+
+                          $totalGluePrice = $qty*$gluePrice;
+
                       ?>
         							<tr>
         								<th><?php echo $sno++;?></th>
-                        <th><?php echo $rows['bm_batch_no']; ?></th>
         								<th><?php echo $rows['wood_type']; ?></th>
+                        <th><?php echo $gradiationRows['gradation']; ?></th>
                         <th><?php echo $rows['width']; ?></th>
                         <th><?php echo $rows['length']; ?></th>
                         <th><?php echo $rows['widthg']; ?></th>
@@ -164,13 +207,15 @@
         								<th><?php echo $rows['no_of_pieces'];?></th>
         								<th><?php echo $rows['sqm'];?></th> 
                         <th><?php echo $rows['sqft'];?></th>
-                        <th><?php  ?></th>
-                        <th><?php //echo $rows[''];?></th>
-                        <th><?php //echo $rows['']; ?></th>
+                        <th><?php echo $avgLL; ?></th>
+                        <th><?php echo $avgCostPerPieces;?></th>
+                        <th><?php echo $totalGluePrice; ?></th>
                         <th><?php echo $avgPriceRows['price'];?></th>
                         <th><?php echo $avgGlueRows['price']; ?></th>
                         <th><?php //echo $rows[''];?></th>
                         <th><?php //echo $rows['']; ?></th>
+                        <th><?php //echo $rows[''];?></th>
+                        <th><?php //echo $rows[''];?></th>
                         <th><?php //echo $rows[''];?></th>
                         <th><?php //echo $rows['']; ?></th>
                         <th><?php //echo $rows[''];?></th>

@@ -20,6 +20,13 @@
             $sqm = $_POST['sqm'];
             $sqft = $_POST['sqft'];
 
+            $sqlBatchName = "SELECT * FROM ta_season_batch_nos WHERE batch_id = '$bm_batch_no'";
+            $batchNameResp = $conn->query($sqlBatchName);
+            $rowBatchName = mysqli_fetch_array($batchNameResp,MYSQLI_ASSOC);
+            $batchName = $rowBatchName['batch_id'];
+
+
+
             $production_type = $_POST['prodution_type'];
             $glow_type = $_POST['glow_type'];
             $quantity = $_POST['glow_quantity'];
@@ -52,7 +59,7 @@
 
 
             $query= "INSERT INTO `ta_board_manufacturing` (`bm_date`, `bm_batch_no`, `type_of_wood`, `length`, `gradiation` , `widthg`, `width`, `thickness`, `no_of_pieces`, `sqm`, `sqft`) 
-            VALUES ('$bm_date', '$bm_batch_no', '$type_of_wood', '$board_length','$gradiation', '$board_widthg', '$board_width', '$thickness', '$consumed_qty', '$sqm', '$sqft')";	
+            VALUES ('$bm_date', '$batchName', '$type_of_wood', '$board_length','$gradiation', '$board_widthg', '$board_width', '$thickness', '$consumed_qty', '$sqm', '$sqft')";	
 
             $resp = $conn->query($query);
             if ($resp === TRUE) {
@@ -61,7 +68,7 @@
                 {
                     for ($i = 0; $i < count($glow_type); $i++) {
 
-                        $query_roles = "INSERT INTO ta_consumed_glue (production_type,production_type_id, glue_type, qty, uom) VALUES ('$production_type','$last_id', '$glow_type[$i]', '$quantity[$i]','$uom[$i]')";
+                        $query_roles = "INSERT INTO ta_consumed_glue (production_type,production_type_id, glue_type, qty, uom, board_batch_id) VALUES ('$production_type','$last_id', '$glow_type[$i]', '$quantity[$i]','$uom[$i]', '$batchName')";
                         if ($conn->query($query_roles) === TRUE) {
                             // $last_id = $conn->insert_id;
                         } else {
@@ -73,7 +80,8 @@
                 header('Content-Type: application/json; charset=UTF-8');
                 die(json_encode(array('message' => 'Record Inserted Successfully...!')));
             } else {
-                echo "Error: ".mysqli_error($conn);
+                die(json_encode(array('message' => "Error: ".mysqli_error($conn))));
+                // echo "Error: ".mysqli_error($conn);
             }
         } else {
             header('Content-Type: application/json; charset=UTF-8');

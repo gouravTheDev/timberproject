@@ -210,6 +210,8 @@
                           $rowpricePerSeasonRes = mysqli_fetch_array($pricePerSeasonRes,MYSQLI_ASSOC);
                           $seasonPrice = $rowpricePerSeasonRes['price_seasoning_per_cft'];
 
+
+
                       ?>
                   
         							<tr>
@@ -227,7 +229,9 @@
                           $totalCost = ($avgPriceRows['price']*$totalConsumedCft)+($rowRawGlue['price']*$totalGlue)+($seasonPrice*$totalConsumedCft);
                           $totalCostAvgOp = $totalCost/$totalAvgCftCalculated;
                           $totalPricePerPcs = ($rows['cft']*$totalCostAvgOp)/$rows['pieces'];
-
+                          $rowId = $rows['llm_id'];
+                          $sqlUpdate = "UPDATE ta_ll_manufacturing set avg_price_per_pieces = '$totalPricePerPcs' WHERE llm_id = '$rowId'";
+                          $resultUpdate = $conn->query($sqlUpdate);
 
                         ?>
                         <?php if ($rows['batch_no'] != $prevbatchNo): ?>

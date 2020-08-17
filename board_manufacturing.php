@@ -34,10 +34,9 @@
   <style>
     [contenteditable="true"]
     {
-    border-style: solid;
-        border-width: 2px;
-        background-color: #fff;
-
+      border-style: solid;
+      border-width: 2px;
+      background-color: #fff;
     }
   </style>
 </head>
@@ -610,7 +609,7 @@
     $(document).ready(function () {
             $("input[name=boardRadio]:radio").change(function () {
                 var id = this.value;
-                alert(id);
+                // alert(id);
                 $.ajax({
                     type: 'post',
                     url: 'sav_files/get_llm_details.php',
@@ -621,7 +620,7 @@
                       $('#llm_idconsumed').val(response.data['llm_id']);
                       $('#bm_date').val(response.data['llm_date']);
                       $('#type_of_wood').val(response.data['type_of_wood']);
-                      // $('#long_batch_no').val(response.data['batch_no']);
+                      $('#bm_batch_no').val(response.data['batch_no']);
                       $('#long_batch_id').val(response.data['seasonout_batch']);
                       $('#board_length').val(response.data['length']);
                       $('#board_width').val(response.data['width']);
