@@ -95,9 +95,11 @@
         <!-- Begin Page Content -->
         <div class="">
 
+
           <!-- Page Heading -->
-          <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <!--h2 class="h5 mb-0 text-gray-800 text-center" style="width: 100%;">Add Raw Material</h2-->			
+          <div class="container-fluid d-sm-flex align-items-center justify-content-between mb-4 mt-2">
+            <!--h2 class="h5 mb-0 text-gray-800 text-center" style="width: 100%;">Add Raw Material</h2-->	
+            <a href="addMonthlyCost.php" class="btn btn-primary">Enter Monthly Cost</a>	
           </div>
         <div class="">
           <div class="card shadow mb-4">
@@ -143,6 +145,15 @@
                       $sno = 1;
                       $counter = $thickness = 0;
                       $data = array();
+
+                      $sqlMonthlyCost = "SELECT * FROM ta_monthly_cost";
+                      $respMonthlyCost = $conn->query($sqlMonthlyCost);
+                      $rowDetails = mysqli_fetch_array($respMonthlyCost,MYSQLI_ASSOC);
+                      $labourCost = $rowDetails['labour_cost'];
+                      $electricCost = $rowDetails['electric_cost'];
+                      $misCost = $rowDetails['mis_cost'];
+                      $totalMisCost = $rowDetails['total_cost'];
+
                         while ($rows = $resp->fetch_assoc()) {
 
                           // FETCH DATA FROM LL_MANU
@@ -179,12 +190,13 @@
                           $gradiationRows = mysqli_fetch_array($gradiationresp,MYSQLI_ASSOC);
 
                           $getGlue = "SELECT * FROM ta_consumed_glue WHERE board_batch_id = '$rowBatchNo' ";
-                          $avgGlueresp = $conn->query($getGlue);
+                          $getGlueResp = $conn->query($getGlue);
                           
-                          $rowGetGlue = mysqli_fetch_array($getGlue,MYSQLI_ASSOC);
+                          $rowGetGlue = mysqli_fetch_array($getGlueResp,MYSQLI_ASSOC);
 
                           $glueType = $rowGetGlue['glue_type'];
                           $qty = $rowGetGlue['qty'];
+                          // echo $qty;
 
                           $avgGlue = "SELECT * FROM ta_raw_glue WHERE glue_type = '$glueType' ";
                           $avgGlueresp = $conn->query($avgGlue);
@@ -193,8 +205,8 @@
 
                           $gluePrice = $rowRawGlue['price'];
 
-                          $totalGluePrice = $qty*$gluePrice;
-
+                          $glueCost = $gluePrice*$rows['no_of_pieces'];
+                          $totalCost = ($avgCostPerPieces*$gluePrice)+$glueCost;
                       ?>
         							<tr>
         								<th><?php echo $sno++;?></th>
@@ -209,18 +221,18 @@
                         <th><?php echo $rows['sqft'];?></th>
                         <th><?php echo $avgLL; ?></th>
                         <th><?php echo $avgCostPerPieces;?></th>
-                        <th><?php echo $totalGluePrice; ?></th>
-                        <th><?php echo $avgPriceRows['price'];?></th>
-                        <th><?php echo $avgGlueRows['price']; ?></th>
-                        <th><?php //echo $rows[''];?></th>
-                        <th><?php //echo $rows['']; ?></th>
-                        <th><?php //echo $rows[''];?></th>
-                        <th><?php //echo $rows[''];?></th>
-                        <th><?php //echo $rows[''];?></th>
-                        <th><?php //echo $rows['']; ?></th>
-                        <th><?php //echo $rows[''];?></th>
-                        <th><?php //echo $rows['']; ?></th>
-                        <th><?php //echo $rows[''];?></th>
+                        <th><?php echo $gluePrice; ?></th>
+                        <th><?php echo $avgCostPerPieces*$gluePrice;?></th>
+                        <th><?php echo $glueCost; ?></th>
+                        <th><?php echo $totalCost; ?></th>
+                        <th><?php echo $totalCost/$rows['no_of_pieces']; ?></th>
+                        <th><?php echo $labourCost;?></th>
+                        <th><?php echo $electricCost;?></th>
+                        <th><?php echo $misCost; ?></th>
+                        <th><?php echo $totalMisCost;?></th>
+                        <th><?php echo $totalMisCost/$rows['sqft']; ?></th>
+                        <th><?php echo $totalCost/$rows['sqft']; ?></th>
+                        <th><?php echo ($totalMisCost/$rows['sqft'])+($totalCost/$rows['sqft']); ?></th>
         							</tr>
                     <?php } ?>
         						</tbody>
